@@ -19,7 +19,6 @@ const HIT_FLASH_DURATION = 150;
 export default function ScareObject() {
     const cubeRef = useRef<Mesh>(null);
     const hitTimeoutRef = useRef<number | null>(null);
-
     const hp = useScareObjectStore((state) => state.hp);
     const isHit = useScareObjectStore((state) => state.isHit);
 
