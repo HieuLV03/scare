@@ -22,7 +22,7 @@ const allowedOrigins = new Set<string>([
     "http://192.168.2.46:3000",
 
     // Production frontend
-    "https://boom-roan-two.vercel.app",
+    "https://scare-coral.vercel.app",
 ]);
 function buildCorsHeaders(
     origin: string | undefined
@@ -120,7 +120,7 @@ gameServer.define("battle", BattleRoom);
 app.get("/health", (_req, res) => {
     res.status(200).json({
         ok: true,
-        service: "BOOM server",
+        service: "SCARE server",
     });
 });
 
@@ -210,7 +210,7 @@ async function main() {
         await gameServer.listen(PORT);
 
         console.log(
-            `[SERVER] BOOM listening on port ${PORT}`
+            `[SERVER] SCARE listening on port ${PORT}`
         );
         console.log("[SERVER] Lobby room: lobby");
         console.log("[SERVER] Battle room: battle");
