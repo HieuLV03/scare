@@ -3,9 +3,9 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
     return {
         id: "/",
-        name: "BOOM - Battle Royale",
-        short_name: "BOOM",
-        description: "BOOM Multiplayer Battle Royale Game",
+        name: "Scare - Battle Royale",
+        short_name: "Scare",
+        description: "Scare Multiplayer Battle Royale Game",
 
         start_url: "/",
         scope: "/",

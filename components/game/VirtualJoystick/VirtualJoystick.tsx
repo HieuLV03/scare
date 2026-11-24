@@ -3,7 +3,7 @@
 
 import { useRef, useState } from "react";
 import type { PointerEvent } from "react";
-
+import { useRunStore } from "@/stores/run.store";
 import { useMovementStore } from "@/stores/movement.store";
 
 import "./VirtualJoystick.css";
@@ -22,6 +22,11 @@ export default function VirtualJoystick() {
     });
 
     const active = useRef(false);
+    const pointerId = useRef<number | null>(null);
+
+    const setRunning = useRunStore(
+        (state) => state.setRunning
+    );
 
     const setMovement = useMovementStore(
         (state) => state.setMovement
@@ -44,8 +49,11 @@ export default function VirtualJoystick() {
         const dx = clientX - centerX;
         const dy = clientY - centerY;
 
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        // Kéo vượt cạnh trên joystick thì chạy.
+        const shouldRun = clientY < rect.top;
+        setRunning(shouldRun);
 
+        const distance = Math.hypot(dx, dy);
         const scale =
             distance > MAX_DISTANCE
                 ? MAX_DISTANCE / distance
@@ -56,15 +64,17 @@ export default function VirtualJoystick() {
 
         setPosition({ x, y });
 
-        const normalizedX = x / MAX_DISTANCE;
-        const normalizedY = y / MAX_DISTANCE;
-
-        // Trả input thô; LocalPlayerController xử lý hướng di chuyển.
-        setMovement(normalizedX, normalizedY);
+        setMovement(
+            x / MAX_DISTANCE,
+            y / MAX_DISTANCE
+        );
     }
 
     function start(event: PointerEvent<HTMLDivElement>) {
+        if (active.current) return;
+
         active.current = true;
+        pointerId.current = event.pointerId;
 
         event.currentTarget.setPointerCapture(event.pointerId);
 
@@ -76,7 +86,12 @@ export default function VirtualJoystick() {
     }
 
     function move(event: PointerEvent<HTMLDivElement>) {
-        if (!active.current) return;
+        if (
+            !active.current ||
+            pointerId.current !== event.pointerId
+        ) {
+            return;
+        }
 
         updateJoystick(
             event.clientX,
@@ -85,16 +100,36 @@ export default function VirtualJoystick() {
         );
     }
 
-    function end(event: PointerEvent<HTMLDivElement>) {
-        active.current = false;
-
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-            event.currentTarget.releasePointerCapture(event.pointerId);
-        }
-
-        setPosition({ x: 0, y: 0 });
-        resetMovement();
+ function end(event: PointerEvent<HTMLDivElement>) {
+    if (
+        !active.current ||
+        pointerId.current !== event.pointerId
+    ) {
+        return;
     }
+
+    active.current = false;
+    pointerId.current = null;
+
+    // Ghi nhớ trạng thái chạy trước khi thả joystick.
+    const wasRunning = useRunStore.getState().running;
+
+    setPosition({ x: 0, y: 0 });
+
+    // Nếu đang chạy thì giữ trạng thái chạy.
+    if (wasRunning) {
+        setMovement(0, 0);
+    } else {
+        resetMovement();
+        setRunning(false);
+    }
+
+    if (
+        event.currentTarget.hasPointerCapture(event.pointerId)
+    ) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+}
 
     return (
         <div

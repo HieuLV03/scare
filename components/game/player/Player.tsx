@@ -29,6 +29,8 @@ type Props = {
 
     jumpTrigger?: number;
     punchTrigger?: number;
+        punchHeld?: boolean; // Thêm dòng này
+
     hitTrigger?: number;
     weaponType?: string;
 };
@@ -46,6 +48,8 @@ export default function Player({
     running = false,
     crouching = false,
     jumpTrigger = 0,
+        punchHeld = false, // Thêm dòng này
+
     weaponType = "",
     aiming = false,
     punchTrigger: remotePunchTrigger,
@@ -71,6 +75,7 @@ export default function Player({
                     aiming={aiming}
                     jumpTrigger={jumpTrigger}
                     punchTrigger={punchTrigger}
+                        punchHeld={punchHeld}
                         hitTrigger={hitTrigger}
 
                     weaponType={weaponType}

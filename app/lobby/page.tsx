@@ -541,270 +541,197 @@ function LobbyContent() {
     // UI
     // ========================================================
 
-    return (
-        <main className="lobby-page">
-            <div className="lobby-background" />
+ 
+return (
+    <main className="lobby-page">
+        <div className="lobby-shell">
 
-            <section className="lobby-shell">
-                <header className="lobby-header">
+            {/* HEADER */}
+            <header className="lobby-header">
+                <div className="lobby-brand">
+                    <span>MULTIPLAYER</span>
+                </div>
+
+                <div className="lobby-header-right">
+                    <span className="lobby-connection">
+                        <i />
+                        ONLINE
+                    </span>
+
                     <button
-                        type="button"
-                        className="lobby-back-button"
+                        className="lobby-leave"
                         onClick={() => void leaveRoom()}
                     >
-                        <span aria-hidden="true">←</span>
-                        Rời phòng
+                        RỜI PHÒNG
                     </button>
+                </div>
+            </header>
 
-                    <div className="lobby-brand">
-                        <span className="lobby-brand-name">
-                            BOOM
-                        </span>
-                        <span className="lobby-brand-subtitle">
-                            MULTIPLAYER
-                        </span>
-                    </div>
+            {/* MAIN */}
+            <section className="lobby-content">
 
-                    <div className="lobby-header-actions">
-                        <div className="lobby-connection">
-                            <span className="lobby-online-dot" />
-                            ĐÃ KẾT NỐI
+                {/* LEFT: PLAYERS */}
+                <section className="lobby-players">
+
+                    <div className="lobby-panel-header">
+                        <div>
+                            <span className="lobby-label">
+                                PHÒNG CHỜ
+                            </span>
+                            <h1>Người chơi</h1>
                         </div>
 
-                        {isHost && (
-                            <button
-                                type="button"
-                                className="lobby-start-button lobby-header-start-button"
-                                onClick={startGame}
-                                disabled={!canStart}
-                            >
-                                {starting
-                                    ? "ĐANG BẮT ĐẦU..."
-                                    : "BẮT ĐẦU TRẬN"}
-                                <span aria-hidden="true">→</span>
-                            </button>
+                        <strong className="lobby-count">
+                            {players.length}/10
+                        </strong>
+                    </div>
+
+                    <div className="lobby-player-list">
+                        {players.map((player) => {
+                            const playerIsHost =
+                                player.sessionId === effectiveHostId;
+
+                            const isCurrentPlayer =
+                                player.sessionId === room.sessionId;
+
+                            return (
+                                <article
+                                    className={`lobby-player ${
+                                        isCurrentPlayer
+                                            ? "is-current"
+                                            : ""
+                                    }`}
+                                    key={player.sessionId}
+                                >
+                                    <div className="lobby-avatar">
+                                        {player.name
+                                            .slice(0, 1)
+                                            .toUpperCase()}
+                                    </div>
+
+                                    <div className="lobby-player-info">
+                                        <strong>
+                                            {player.name}
+                                            {isCurrentPlayer && (
+                                                <small>BẠN</small>
+                                            )}
+                                        </strong>
+
+                                        <span>
+                                            {playerIsHost
+                                                ? "Chủ phòng"
+                                                : "Thành viên"}
+                                        </span>
+                                    </div>
+
+                                    {playerIsHost ? (
+                                        <span className="lobby-host">
+                                            ★ HOST
+                                        </span>
+                                    ) : (
+                                        <span className="lobby-ready" />
+                                    )}
+                                </article>
+                            );
+                        })}
+
+                        {players.length === 0 && (
+                            <div className="lobby-empty">
+                                Đang tải người chơi...
+                            </div>
                         )}
                     </div>
-                </header>
 
-                <section className="lobby-hero">
-                    <div className="lobby-eyebrow">
-                        <span />
-                        HAUNTED HOSPITAL
+                    <div className="lobby-player-footer">
+                        <span className="lobby-online-dot" />
+                        Đang đồng bộ người chơi
                     </div>
-
-                    <h1>
-                        SẢNH <span>CHỜ</span>
-                    </h1>
-
-                    <p className="lobby-description">
-                        Tập hợp đồng đội. Chuẩn bị bước vào
-                        bệnh viện ma ám.
-                    </p>
                 </section>
 
-                <section className="lobby-room-card">
-                    <div className="lobby-room-info">
+                {/* RIGHT: ROOM */}
+                <aside className="lobby-info">
+
+                    <div className="lobby-map">
+                        <div className="lobby-map-image">
+                            🏥
+                        </div>
+
+                        <div>
+                            <span className="lobby-label">
+                                BẢN ĐỒ
+                            </span>
+                            <h2>Haunted Hospital</h2>
+                            <p>Bệnh viện ma ám</p>
+                        </div>
+                    </div>
+
+                    <div className="lobby-room-code">
                         <span className="lobby-label">
                             MÃ PHÒNG
                         </span>
 
-                        <strong className="lobby-room-code">
-                            {roomCode || "------"}
-                        </strong>
+                        <div className="lobby-code-row">
+                            <strong>
+                                {roomCode || "------"}
+                            </strong>
 
-                        <span className="lobby-room-hint">
-                            Chia sẻ mã này với bạn bè
+                            <button
+                                onClick={() => void copyRoomCode()}
+                                disabled={!roomCode}
+                                title="Sao chép mã phòng"
+                            >
+                                {copied ? "✓" : "▣"}
+                            </button>
+                        </div>
+
+                        <span className="lobby-copy-status">
+                            {copied
+                                ? "Đã sao chép"
+                                : "Chia sẻ mã với bạn bè"}
                         </span>
                     </div>
 
-                    <button
-                        type="button"
-                        className="lobby-copy-button"
-                        onClick={() => void copyRoomCode()}
-                        disabled={!roomCode}
-                    >
-                        <span aria-hidden="true">
-                            {copied ? "✓" : "▣"}
-                        </span>
-                        {copied
-                            ? "Đã sao chép"
-                            : "Sao chép mã"}
-                    </button>
-                </section>
-
-                <section className="lobby-main-grid">
-                    <div className="lobby-players-panel">
-                        <div className="lobby-section-header">
-                            <div>
-                                <span className="lobby-label">
-                                    ĐỘI CỦA BẠN
-                                </span>
-                                <h2>Người chơi</h2>
-                            </div>
-
-                            <span className="lobby-player-count">
-                                {players.length} / 10
-                            </span>
-                        </div>
-
-                        <div className="lobby-player-list">
-                            {players.map((player) => {
-                                const playerIsHost =
-                                    player.sessionId === effectiveHostId;
-
-                                const isCurrentPlayer =
-                                    player.sessionId === room.sessionId;
-
-                                return (
-                                    <article
-                                        className="lobby-player"
-                                        key={player.sessionId}
-                                    >
-                                        <div className="lobby-player-avatar">
-                                            {player.name
-                                                .slice(0, 1)
-                                                .toUpperCase()}
-                                        </div>
-
-                                        <div className="lobby-player-details">
-                                            <strong>
-                                                {player.name}
-
-                                                {isCurrentPlayer && (
-                                                    <span className="lobby-you">
-                                                        BẠN
-                                                    </span>
-                                                )}
-                                            </strong>
-
-                                            <span>
-                                                {playerIsHost
-                                                    ? "Chủ phòng"
-                                                    : "Thành viên"}
-                                            </span>
-                                        </div>
-
-                                        {playerIsHost ? (
-                                            <span className="lobby-host-badge">
-                                                ★ CHỦ PHÒNG
-                                            </span>
-                                        ) : (
-                                            <span className="lobby-ready-dot" />
-                                        )}
-                                    </article>
-                                );
-                            })}
-
-                            {players.length < 10 && isWaiting && (
-                                <div className="lobby-empty-slot">
-                                    <span>＋</span>
-                                    <p>
-                                        Đang chờ đồng đội tham gia...
-                                    </p>
-                                </div>
-                            )}
-
-                            {players.length === 0 && (
-                                <div className="lobby-empty-state">
-                                    Đang tải danh sách người chơi...
-                                </div>
-                            )}
-                        </div>
-
-                        <p className="lobby-live-hint">
-                            <span className="lobby-online-dot" />
-                            Danh sách được cập nhật tự động
-                        </p>
-                    </div>
-
-                    <aside className="lobby-match-panel">
-                        <span className="lobby-label">
-                            THÔNG TIN TRẬN ĐẤU
-                        </span>
-
-                        <div className="lobby-map-preview">
-                            <div className="lobby-map-icon">
-                                🏥
-                            </div>
-
-                            <div>
-                                <h3>Haunted Hospital</h3>
-                                <p>Bệnh viện ma ám</p>
-                            </div>
-                        </div>
-
-                        <div className="lobby-match-row">
+                    <div className="lobby-match-info">
+                        <div>
                             <span>Chế độ</span>
                             <strong>Multiplayer</strong>
                         </div>
 
-                        <div className="lobby-match-row">
+                        <div>
                             <span>Người chơi</span>
-                            <strong>{players.length} / 10</strong>
+                            <strong>{players.length}/10</strong>
                         </div>
 
-                        <div className="lobby-match-row">
+                        <div>
                             <span>Trạng thái</span>
-                            <strong className="lobby-waiting-status">
+                            <strong className="lobby-status">
                                 {isWaiting ? "Đang chờ" : roomStatus}
                             </strong>
                         </div>
+                    </div>
 
-                        <div className="lobby-divider" />
-
-                        <div className="lobby-start-area">
-                            {isHost ? (
-                                <>
-                                    <p className="lobby-start-hint">
-                                        Bạn có thể bắt đầu ngay,
-                                        kể cả khi chơi một mình.
-                                    </p>
-
-                                    <button
-                                        type="button"
-                                        className="lobby-start-button"
-                                        onClick={startGame}
-                                        disabled={!canStart}
-                                    >
-                                        {starting
-                                            ? "ĐANG BẮT ĐẦU..."
-                                            : "BẮT ĐẦU TRẬN"}
-
-                                        <span aria-hidden="true">
-                                            →
-                                        </span>
-                                    </button>
-                                </>
-                            ) : (
-                                <div className="lobby-waiting-box">
-                                    <span className="lobby-pulse-dot" />
-
-                                    <div>
-                                        <strong>
-                                            Đang chờ chủ phòng
-                                        </strong>
-                                        <p>
-                                            Chủ phòng sẽ quyết định
-                                            khi nào bắt đầu trận đấu.
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-
-                            <p
-                                style={{
-                                    marginTop: 10,
-                                    fontSize: 12,
-                                    color: "#ffcc66",
-                                    overflowWrap: "anywhere",
-                                }}
+                    <div className="lobby-start-area">
+                        {isHost ? (
+                            <button
+                                className="lobby-start-button"
+                                onClick={startGame}
+                                disabled={!canStart}
                             >
-                                Debug: host={String(isHost)} |
-                                status={roomStatus} |
-                                starting={String(starting)}
-                            </p>
-                        </div>
+                                {starting
+                                    ? "ĐANG KẾT NỐI..."
+                                    : "BẮT ĐẦU TRẬN ĐẤU"}
+
+                                <span>→</span>
+                            </button>
+                        ) : (
+                            <div className="lobby-waiting">
+                                <span className="lobby-pulse" />
+                                <div>
+                                    <strong>Đang chờ chủ phòng</strong>
+                                    <p>Trận đấu sẽ bắt đầu khi chủ phòng sẵn sàng.</p>
+                                </div>
+                            </div>
+                        )}
 
                         {message && (
                             <p
@@ -814,16 +741,15 @@ function LobbyContent() {
                                 {message}
                             </p>
                         )}
-                    </aside>
-                </section>
+                    </div>
 
-                <footer className="lobby-footer">
-                    <span>BOOM · HAUNTED HOSPITAL</span>
-                    <span>ĐỪNG ĐI MỘT MÌNH</span>
-                </footer>
+                </aside>
             </section>
-        </main>
-    );
+
+        </div>
+    </main>
+);
+
 }
 
 // ============================================================

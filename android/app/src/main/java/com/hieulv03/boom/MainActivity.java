@@ -1,4 +1,4 @@
-package com.hieulv03.boom;
+package com.hieulv03.scare;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -80,7 +80,7 @@ export default function LandscapeGuard({ children }: Props) {
         return (
             <div className="portrait-warning">
                 <div className="portrait-warning-logo">
-                    BOOM
+                    scare
                     <span>BATTLE ROYALE</span>
                 </div>
 
@@ -128,7 +128,7 @@ export default function LandscapeGuard({ children }: Props) {
                 <h1>Hãy xoay ngang màn hình!</h1>
 
                 <p>
-                    BOOM được thiết kế để chơi ở chế độ màn hình ngang.
+                    Scare được thiết kế để chơi ở chế độ màn hình ngang.
                     Vui lòng xoay điện thoại để tiếp tục.
                 </p>
 
@@ -141,7 +141,7 @@ export default function LandscapeGuard({ children }: Props) {
     }
 
     return (
-        <div className="boom-screen">
+        <div className="scare-screen">
             {children}
         </div>
     );

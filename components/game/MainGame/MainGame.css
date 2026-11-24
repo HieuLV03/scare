@@ -15,7 +15,7 @@ body {
 }
 
 /* Khung game phủ kín viewport */
-.boom-game {
+.scare-game {
     position: fixed;
     inset: 0;
 
@@ -34,7 +34,7 @@ body {
 }
 
 /* Canvas 3D phủ kín khung game */
-.boom-game canvas {
+.scare-game canvas {
     position: absolute !important;
     inset: 0;
 

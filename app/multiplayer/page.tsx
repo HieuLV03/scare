@@ -88,7 +88,7 @@ async function findRoomByCode(
             mapId: selectedMap,
         });
 
-        console.log("[BOOM] Lobby created:", {
+        console.log("[Scare] Lobby created:", {
             roomId: room.roomId,
             sessionId: room.sessionId,
             elapsedMs: Math.round(
@@ -104,7 +104,7 @@ async function findRoomByCode(
             `&code=${encodeURIComponent(code)}`
         );
     } catch (error) {
-        console.error("[BOOM] CREATE LOBBY ERROR", error);
+        console.error("[Scare] CREATE LOBBY ERROR", error);
 
         setStatus(
             "Không thể tạo phòng. Kiểm tra kết nối máy chủ."
@@ -148,7 +148,7 @@ const room = await client.joinById(
     }
 );
 
-console.log("[BOOM] Joined lobby:", {
+console.log("[Scare] Joined lobby:", {
     roomId: room.roomId,
     sessionId: room.sessionId,
     roomStatus: room.state.roomStatus,
@@ -171,7 +171,7 @@ router.push(
             `&code=${encodeURIComponent(code)}`
         );
     } catch (error) {
-        console.error("[BOOM] JOIN LOBBY ERROR", error);
+        console.error("[Scare] JOIN LOBBY ERROR", error);
 
         setStatus(
             "Không thể tham gia sảnh. Vui lòng thử lại."
@@ -185,8 +185,8 @@ router.push(
             <section className="multiplayer-panel">
                 <header className="multiplayer-header">
                     <div className="multiplayer-brand">
-                        <h1>BOOM</h1>
-                        <p>CHƠI CÙNG BẠN BÈ</p>
+                        <h1>CHƠI</h1>
+                        <p>CÙNG BẠN BÈ</p>
                     </div>
 
                     <div className="multiplayer-heading">
@@ -221,8 +221,7 @@ router.push(
 
                         <div className="map-selection">
                             <div className="section-heading">
-                                <span className="section-number">01</span>
-                                <h3>Bản đồ trận đấu</h3>
+                                <h3>Chọn bản đồ</h3>
                             </div>
 
                             <div className="map-selection-list">
@@ -257,14 +256,6 @@ router.push(
 
                     <section className="multiplayer-actions">
                         <div className="action-block">
-                            <div className="section-heading">
-                                <span className="section-number">02</span>
-                                <h3>Tạo trận đấu</h3>
-                            </div>
-
-                            <p className="action-description">
-                                Tạo phòng mới và mời bạn bè tham gia bằng mã phòng.
-                            </p>
 
                             <button
                                 type="button"
@@ -285,7 +276,6 @@ router.push(
 
                         <div className="action-block">
                             <div className="section-heading">
-                                <span className="section-number">03</span>
                                 <h3>Tham gia phòng</h3>
                             </div>
 
@@ -334,7 +324,7 @@ router.push(
                 <footer className="multiplayer-footer">
                     <span className="status-indicator" />
                     <p aria-live="polite">{status}</p>
-                    <span className="footer-version">BOOM MULTIPLAYER</span>
+                    <span className="footer-version"> MULTIPLAYER</span>
                 </footer>
             </section>
         </main>

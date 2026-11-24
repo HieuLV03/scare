@@ -77,13 +77,13 @@ export default function HomePage() {
                 </div>
 
                 <div className="home-warning-brand">
-                    BOOM <span>BATTLE ROYALE</span>
+                    Scare <span>BATTLE ROYALE</span>
                 </div>
 
                 <h1>HÃY XOAY NGANG MÀN HÌNH!</h1>
 
                 <p>
-                    BOOM được thiết kế để chơi ở chế độ màn hình ngang.
+                    Scare được thiết kế để chơi ở chế độ màn hình ngang.
                     Hãy xoay điện thoại sang ngang để tiếp tục chiến đấu!
                 </p>
 
@@ -108,7 +108,7 @@ export default function HomePage() {
 
             <header className="header">
                 <div className="logo">
-                    <span>BOOM</span>
+                    <span>Scare</span>
                     <small>BATTLE ROYALE</small>
                 </div>
 
@@ -129,7 +129,7 @@ export default function HomePage() {
                     <h1>
                         DROP
                         <br />
-                        <strong>AND BOOM</strong>
+                        <strong>AND Scare</strong>
                     </h1>
 
                     <div className="actions">
@@ -181,7 +181,7 @@ export default function HomePage() {
                     </div>
                 </div>
 
-                <div className="version">BOOM WEB · v0.1.0</div>
+                <div className="version">Scare WEB · v0.1.0</div>
             </footer>
         </main>
     );

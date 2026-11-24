@@ -60,8 +60,8 @@ const lastPointerRef = useRef({
 const isFiringRef = useRef(false);
 
 const FIRE_INTERVAL = 240;
-const CAMERA_SENSITIVITY = 0.003;
-
+const CAMERA_SENSITIVITY_X = 0.009;
+const CAMERA_SENSITIVITY_Y = 0.006;
 const MIN_CAMERA_PITCH = -1.45;
 const MAX_CAMERA_PITCH = 1.52;
     const room = useMultiplayerStore(
@@ -97,7 +97,18 @@ const crosshairVisible = useCrosshairStore(
     // ATTACK
     // ========================================================
 
+useEffect(() => {
+    return () => {
+        isFiringRef.current = false;
 
+        if (fireIntervalRef.current !== null) {
+            window.clearInterval(fireIntervalRef.current);
+            fireIntervalRef.current = null;
+        }
+
+        firePointerRef.current = null;
+    };
+}, []);
 
 const handleAttack = () => {
     if (!room) return;
@@ -107,7 +118,7 @@ const handleAttack = () => {
 
     // Xoay thân nhân vật về hướng tâm ngắm.
     window.dispatchEvent(
-        new CustomEvent("boom:attack-aim", {
+        new CustomEvent("scare:attack-aim", {
             detail: {
                 direction: aim.direction,
             },
@@ -118,7 +129,7 @@ const handleAttack = () => {
         // LocalPlayerController sẽ tính điểm ngắm và
         // hướng đạn thực tế từ đầu nòng súng.
         window.dispatchEvent(
-            new CustomEvent("boom:request-bullet", {
+            new CustomEvent("scare:request-bullet", {
                 detail: {
                     origin: aim.origin,
                     direction: aim.direction,
@@ -129,7 +140,7 @@ const handleAttack = () => {
         );
 
         // Không gửi attack ở đây.
-        // GameHUD sẽ gửi sau khi nhận boom:bullet-trajectory.
+        // GameHUD sẽ gửi sau khi nhận scare:bullet-trajectory.
         return;
     }
 
@@ -183,33 +194,33 @@ useEffect(() => {
     };
 
     window.addEventListener(
-        "boom:bullet-trajectory",
+        "scare:bullet-trajectory",
         handleBulletTrajectory,
     );
 
     return () => {
         window.removeEventListener(
-            "boom:bullet-trajectory",
+            "scare:bullet-trajectory",
             handleBulletTrajectory,
         );
     };
 }, [room]);
 
-
 const stopFiring = () => {
     isFiringRef.current = false;
 
-    // Tắt animation ngắm ở máy hiện tại.
     useAimingStore.getState().setAiming(false);
 
-    // Đồng bộ trạng thái hết ngắm lên server.
-    if (room) {
-        room.send("aiming", { aiming: false });
-    }
+    // Báo cho Character3D biết người chơi đã thả nút đấm.
+    usePunchStore.getState().setPunchHeld(false);
 
     if (fireIntervalRef.current !== null) {
         window.clearInterval(fireIntervalRef.current);
         fireIntervalRef.current = null;
+    }
+
+    if (room) {
+        room.send("aiming", { aiming: false });
     }
 };
 
@@ -238,6 +249,7 @@ const handleFirePointerDown = (
     event.stopPropagation();
 
     if (firePointerRef.current !== null) return;
+    if (!room) return;
 
     firePointerRef.current = event.pointerId;
 
@@ -248,34 +260,33 @@ const handleFirePointerDown = (
 
     event.currentTarget.setPointerCapture(event.pointerId);
 
-if (!hasRifle) {
-    useAimingStore.getState().setAiming(false);
-    handleAttack();
-    return;
-}
+    isFiringRef.current = true;
 
+    if (hasRifle) {
+        // SÚNG: giữ nút để bắn liên tục.
+        useAimingStore.getState().setAiming(true);
+        room.send("aiming", { aiming: true });
+    } else {
+        // ĐẤM: báo trạng thái đang giữ nút.
+        useAimingStore.getState().setAiming(false);
+        usePunchStore.getState().setPunchHeld(true);
+    }
 
-if (hasRifle) {
-    // Bật animation ngắm ở máy hiện tại.
-    useAimingStore.getState().setAiming(true);
-
-    // Báo cho server để đồng bộ animation tới đối thủ.
-    room?.send("aiming", { aiming: true });
-}
-
-isFiringRef.current = true;
-
-    // Bắn ngay phát đầu tiên.
+    // Đánh hoặc bắn ngay lần đầu.
     handleAttack();
 
-    // Tiếp tục bắn trong lúc vẫn giữ nút.
-    fireIntervalRef.current = window.setInterval(() => {
-        if (isFiringRef.current) {
-            handleAttack();
+    // Chỉ súng mới cần interval.
+    if (hasRifle) {
+        if (fireIntervalRef.current !== null) {
+            window.clearInterval(fireIntervalRef.current);
         }
-    }, FIRE_INTERVAL);
-};
 
+        fireIntervalRef.current = window.setInterval(() => {
+            if (!isFiringRef.current) return;
+            handleAttack();
+        }, FIRE_INTERVAL);
+    }
+};
 
 const handleFirePointerMove = (
     event: PointerEvent<HTMLButtonElement>,
@@ -304,17 +315,16 @@ const handleFirePointerMove = (
         setRotation,
     } = useCameraStore.getState();
 
-    const nextYaw =
-        yaw + deltaX * CAMERA_SENSITIVITY;
+const nextYaw =
+    yaw + deltaX * CAMERA_SENSITIVITY_X;
 
-    const nextPitch = Math.max(
-        MIN_CAMERA_PITCH,
-        Math.min(
-            MAX_CAMERA_PITCH,
-            pitch + deltaY * CAMERA_SENSITIVITY,
-        ),
-    );
-
+const nextPitch = Math.max(
+    MIN_CAMERA_PITCH,
+    Math.min(
+        MAX_CAMERA_PITCH,
+        pitch + deltaY * CAMERA_SENSITIVITY_Y,
+    ),
+);
     setRotation(nextYaw, nextPitch);
 };
 

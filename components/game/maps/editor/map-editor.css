@@ -1,4 +1,4 @@
-.boom-map-editor {
+.scare-map-editor {
   height: 100dvh;
   min-height: 620px;
   display: flex;
@@ -24,12 +24,12 @@
 }
 .bme-status { color: #9ba8b6; font-size: 11px; margin-top: 3px; }
 .bme-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
-.boom-map-editor button {
+.scare-map-editor button {
   color: #e8edf3; background: #29323c; border: 1px solid #3b4652;
   border-radius: 5px; padding: 7px 10px; cursor: pointer; font-size: 12px;
 }
-.boom-map-editor button:hover { background: #374351; }
-.boom-map-editor button:disabled { opacity: .35; cursor: not-allowed; }
+.scare-map-editor button:hover { background: #374351; }
+.scare-map-editor button:disabled { opacity: .35; cursor: not-allowed; }
 .bme-layout { flex: 1; min-height: 0; display: grid; grid-template-columns: 190px minmax(300px, 1fr) 280px; }
 .bme-panel { min-height: 0; overflow: auto; background: #1b2128; padding: 12px; }
 .bme-assets { border-right: 1px solid #303943; }

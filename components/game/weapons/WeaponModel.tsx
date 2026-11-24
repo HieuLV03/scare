@@ -337,13 +337,13 @@ const muzzleMarker = useMemo(() => {
         };
 
         window.addEventListener(
-            "boom:bullet-fired",
+            "scare:bullet-fired",
             handleShot,
         );
 
         return () => {
             window.removeEventListener(
-                "boom:bullet-fired",
+                "scare:bullet-fired",
                 handleShot,
             );
         };
@@ -488,13 +488,13 @@ function MuzzleFlash({
         };
 
         window.addEventListener(
-            "boom:bullet-fired",
+            "scare:bullet-fired",
             handleShot,
         );
 
         return () => {
             window.removeEventListener(
-                "boom:bullet-fired",
+                "scare:bullet-fired",
                 handleShot,
             );
         };

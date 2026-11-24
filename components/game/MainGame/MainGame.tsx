@@ -35,7 +35,6 @@ type Props = {
 type MapId = "hospital";
 
 // ============================================================
-// BOOM GAME
 // ============================================================
 
 export default function MainGame({
@@ -204,7 +203,7 @@ useEffect(() => {
     // ========================================================
 
     return (
-        <div className="boom-game">
+        <div className="scare-game">
             {/* 3D GAME */}
 
             <Canvas
@@ -245,7 +244,7 @@ useEffect(() => {
 
             <button
                 type="button"
-                className="boom-game__out"
+                className="scare-game__out"
                 onClick={handleLeaveGame}
                 disabled={isLeaving}
             >
@@ -255,9 +254,9 @@ useEffect(() => {
             {/* ROOM CODE */}
 
             {roomCode && (
-                <div className="boom-game__room-code">
+                <div className="scare-game__room-code">
                     Mã phòng:
-                    <span className="boom-game__room-code-number">
+                    <span className="scare-game__room-code-number">
                         {roomCode}
                     </span>
                 </div>
@@ -279,7 +278,7 @@ useEffect(() => {
 
             <button
                 type="button"
-                className="boom-game__bomb-button"
+                className="scare-game__bomb-button"
                 aria-label="Đặt bom"
                 onPointerDown={(event) => {
                     event.preventDefault();

@@ -13,7 +13,7 @@ import {
 import { ZOMBIE_HOUSE_DEFAULT } from "./zombie-house-default";
 import "./map-editor.css";
 
-const DRAFT_KEY = "boom.map-editor.draft.v1";
+const DRAFT_KEY = "s.map-editor.draft.v1";
 
 const KINDS: { kind: MapObjectKind; label: string }[] = [
   { kind: "floor", label: "Floor" },
@@ -201,7 +201,7 @@ export default function MapEditor() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `${mapDocument.id || "boom-map"}.json`;
+    anchor.download = `${mapDocument.id || "scare-map"}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
     setMessage("Map JSON exported");
@@ -223,10 +223,10 @@ export default function MapEditor() {
   };
 
   return (
-    <main className="boom-map-editor">
+    <main className="scare-map-editor">
       <header className="bme-header">
         <div>
-          <div className="bme-eyebrow">BOOM / LEVEL DESIGN</div>
+          <div className="bme-eyebrow">SCARE / LEVEL DESIGN</div>
           <input
             className="bme-map-name"
             value={mapDocument.name}

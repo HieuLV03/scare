@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "Boom",
-    description: "Multiplayer Boom Game",
+    title: "Scare",
+    description: "Multiplayer Scare Game",
 };
 
 export const viewport: Viewport = {

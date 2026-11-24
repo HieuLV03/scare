@@ -37,7 +37,7 @@ import { useCameraViewStore } from "@/stores/camera-view.store";
 import {
     useMultiplayerStore,
 } from "@/stores/multiplayer.store";
-
+import { usePunchStore } from "@/stores/punch.store";
 // ============================================================
 // CAMERA DIRECTION CACHE
 // ============================================================
@@ -100,6 +100,13 @@ const aiming = useAimingStore(
 
 const firstPerson = useCameraViewStore(
     (state) => state.firstPerson
+);
+const punchTrigger = usePunchStore(
+    (state) => state.punchTrigger,
+);
+
+const punchHeld = usePunchStore(
+    (state) => state.isPunchHeld,
 );
     // ========================================================
     // PLAYER NAME
@@ -914,13 +921,13 @@ useEffect(() => {
     };
 
     window.addEventListener(
-        "boom:attack-aim",
+        "scare:attack-aim",
         handleAttackAim,
     );
 
     return () => {
         window.removeEventListener(
-            "boom:attack-aim",
+            "scare:attack-aim",
             handleAttackAim,
         );
     };
@@ -1082,23 +1089,23 @@ if (firstHit && firstHit.distance < 2) {
         };
 
         window.dispatchEvent(
-            new CustomEvent("boom:bullet-fired", {
+            new CustomEvent("scare:bullet-fired", {
                 detail: trajectory,
             }),
         );
 
         window.dispatchEvent(
-            new CustomEvent("boom:bullet-trajectory", {
+            new CustomEvent("scare:bullet-trajectory", {
                 detail: trajectory,
             }),
         );
     };
 
-    window.addEventListener("boom:request-bullet", handleRequestBullet);
+    window.addEventListener("scare:request-bullet", handleRequestBullet);
 
     return () => {
         window.removeEventListener(
-            "boom:request-bullet",
+            "scare:request-bullet",
             handleRequestBullet,
         );
     };
@@ -1542,146 +1549,72 @@ useAimStore.getState().setAim(
         // ====================================================
 
     
+// ====================================================
+// JOYSTICK INPUT
+// ====================================================
+
 let { x, y } = useMovementStore.getState();
-// Bấm CHẠY: tự tiến về phía trước nếu không đẩy joystick.
+
 const DEAD_ZONE = 0.08;
 
-const joystickMagnitude = Math.hypot(x, y);
+const rawMagnitude = Math.hypot(x, y);
 
-if (running && joystickMagnitude <= DEAD_ZONE) {
+// Chạy tự động khi không kéo joystick.
+if (running && rawMagnitude <= DEAD_ZONE) {
     x = 0;
     y = -1;
 }
-        // ====================================================
-        // ====================================================
-        //
-        //
-        // chuyển về hệ tọa độ game trước khi đưa vào
-        // camera-relative movement.
-        //
-        // ====================================================
 
+const inputMagnitude = Math.min(1, Math.hypot(x, y));
 
-        // ====================================================
-        // JOYSTICK MAGNITUDEai
-        // ====================================================
+const strength =
+    inputMagnitude > DEAD_ZONE
+        ? (inputMagnitude - DEAD_ZONE) / (1 - DEAD_ZONE)
+        : 0;
 
-        const inputMagnitude =
-            Math.sqrt(
-                x * x +
-                y * y
-            );
+// ====================================================
+// CAMERA DIRECTION
+// ====================================================
 
+const cameraDirection = camera.getWorldDirection(
+    _cameraDirection,
+);
 
-        // ====================================================
-        // DEAD ZONE
-        // ====================================================
+let forwardX = cameraDirection.x;
+let forwardZ = cameraDirection.z;
 
+const forwardLength = Math.hypot(forwardX, forwardZ);
 
-        let strength =
-            0;
+if (forwardLength > 0.0001) {
+    forwardX /= forwardLength;
+    forwardZ /= forwardLength;
+} else {
+    forwardX = 0;
+    forwardZ = -1;
+}
 
+const rightX = -forwardZ;
+const rightZ = forwardX;
 
-        if (
-            inputMagnitude >
-            DEAD_ZONE
-        ) {
+// ====================================================
+// CAMERA-RELATIVE MOVEMENT
+// ====================================================
 
-            strength =
-                (
-                    inputMagnitude -
-                    DEAD_ZONE
-                ) /
-                (
-                    1 -
-                    DEAD_ZONE
-                );
+const inputX = x;
+const inputZ = -y;
 
+let moveX = rightX * inputX + forwardX * inputZ;
+let moveZ = rightZ * inputX + forwardZ * inputZ;
 
-            strength =
-                Math.min(
-                    1,
-                    strength
-                );
+const directionLength = Math.hypot(moveX, moveZ);
 
-        }
-
-
-        // ====================================================
-        // CAMERA FORWARD
-        // ====================================================
-
-        const cameraDirection =
-            camera.getWorldDirection(
-                _cameraDirection
-            );
-
-
-        // ====================================================
-        // CAMERA FORWARD ON GROUND
-        // ====================================================
-
-        let forwardX =
-            cameraDirection.x;
-
-        let forwardZ =
-            cameraDirection.z;
-
-
-        const forwardLength =
-            Math.sqrt(
-                forwardX * forwardX +
-                forwardZ * forwardZ
-            );
-
-
-        if (
-            forwardLength >
-            0.0001
-        ) {
-
-            forwardX /=
-                forwardLength;
-
-            forwardZ /=
-                forwardLength;
-
-        }
-        else {
-
-            forwardX =
-                0;
-
-            forwardZ =
-                -1;
-
-        }
-
-
-        // ====================================================
-        // CAMERA RIGHT
-        // ====================================================
-
-        const rightX =
-            -forwardZ;
-
-        const rightZ =
-            forwardX;
-
-
-        // ====================================================
-        // JOYSTICK → CAMERA SPACE
-        // ====================================================
-
-        let moveX =
-            rightX * x +
-            forwardX * (-y);
-
-        let moveZ =
-            rightZ * x +
-            forwardZ * (-y);
-
-
+if (directionLength > 0.0001 && strength > 0) {
+    moveX /= directionLength;
+    moveZ /= directionLength;
+} else {
+    moveX = 0;
+    moveZ = 0;
+}
         // ====================================================
         // NORMALIZE MOVEMENT
         // ====================================================
@@ -1744,84 +1677,30 @@ const targetSpeed = MAX_SPEED * strength;
         // ====================================================
         // ACCELERATION
         // ====================================================
+// ====================================================
+// ACCELERATION - VECTOR SMOOTHING
+// ====================================================
 
-        const ACCELERATION =
-            18;
+const ACCELERATION = 24;
+const DECELERATION = 28;
 
-        const DECELERATION =
-            22;
+const acceleration = strength > 0
+    ? ACCELERATION
+    : DECELERATION;
 
+const smoothing = 1 - Math.exp(-acceleration * delta);
 
-        const acceleration =
-            strength > 0
-                ? ACCELERATION
-                : DECELERATION;
+velocityX.current = THREE.MathUtils.lerp(
+    velocityX.current,
+    targetVelocityX,
+    smoothing,
+);
 
-
-        const step =
-            acceleration *
-            delta;
-
-
-        // ====================================================
-        // SMOOTH X
-        // ====================================================
-
-        const differenceX =
-            targetVelocityX -
-            velocityX.current;
-
-
-        if (
-            Math.abs(
-                differenceX
-            ) <= step
-        ) {
-
-            velocityX.current =
-                targetVelocityX;
-
-        }
-        else {
-
-            velocityX.current +=
-                Math.sign(
-                    differenceX
-                ) *
-                step;
-
-        }
-
-
-        // ====================================================
-        // SMOOTH Z
-        // ====================================================
-
-        const differenceZ =
-            targetVelocityZ -
-            velocityZ.current;
-
-
-        if (
-            Math.abs(
-                differenceZ
-            ) <= step
-        ) {
-
-            velocityZ.current =
-                targetVelocityZ;
-
-        }
-        else {
-
-            velocityZ.current +=
-                Math.sign(
-                    differenceZ
-                ) *
-                step;
-
-        }
-
+velocityZ.current = THREE.MathUtils.lerp(
+    velocityZ.current,
+    targetVelocityZ,
+    smoothing,
+);
 
         // ====================================================
         // CURRENT SPEED
@@ -2213,6 +2092,8 @@ return (
             .includes("rifle")
     }
     jumpTrigger={jumpTrigger}
+       punchTrigger={punchTrigger}
+    punchHeld={punchHeld}
     weaponType={weaponType}
 />
         </group>

@@ -156,13 +156,13 @@ export default function BulletEffects({
         };
 
         window.addEventListener(
-            "boom:bullet-fired",
+            "scare:bullet-fired",
             handleBulletFired,
         );
 
         return () => {
             window.removeEventListener(
-                "boom:bullet-fired",
+                "scare:bullet-fired",
                 handleBulletFired,
             );
 

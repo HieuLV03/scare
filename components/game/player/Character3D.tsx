@@ -87,6 +87,7 @@ type Props = {
     running?: boolean;
     crouching?: boolean;
     punchTrigger?: number;
+        punchHeld?: boolean; // Thêm dòng này
     aiming?: boolean;
     jumpTrigger?: number;
     hitTrigger?: number;
@@ -646,6 +647,8 @@ export default function Character3D({
     crouching = false,
     aiming = false,
     punchTrigger = 0,
+        punchHeld = false, // Thêm dòng này
+
     jumpTrigger = 0,
     weaponType = "",
     hitTrigger = 0,
@@ -818,8 +821,15 @@ useEffect(() => {
 
 
 const punchingRef = useRef(false);
-const jumpingRef = useRef(false);
+const punchComboRef = useRef(false);
+        const jumpingRef = useRef(false);
 const hitReactRef = useRef(false);
+
+const punchHeldRef = useRef(punchHeld);
+
+useEffect(() => {
+    punchHeldRef.current = punchHeld;
+}, [punchHeld]);
 
 const hitActionRef = useRef<AnimationAction | null>(null);
 const hitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1258,20 +1268,23 @@ const hasRifle =
 useEffect(() => {
     const nextAction = getLocomotionAction();
 
+    if (!nextAction) return;
+
+    // Luôn cập nhật animation sẽ quay về sau khi đấm.
     locomotionActionRef.current = nextAction;
 
-if (
-    !nextAction ||
-    punchingRef.current ||
-    jumpingRef.current ||
-    hitReactRef.current
-) {
-    return;
-}
+    // Không cho locomotion can thiệp khi đang đấm.
+    if (
+        punchingRef.current ||
+        jumpingRef.current ||
+        hitReactRef.current
+    ) {
+        return;
+    }
 
     const previousAction = activeActionRef.current;
 
-    // Đã phát đúng animation thì không reset lại.
+    // Nếu animation hiện tại vẫn đúng thì không khởi động lại.
     if (
         previousAction === nextAction &&
         nextAction.isRunning()
@@ -1279,7 +1292,6 @@ if (
         return;
     }
 
-    // Dừng các animation khác.
     for (const action of Object.values(actions)) {
         if (!action || action === nextAction) continue;
 
@@ -1287,7 +1299,6 @@ if (
         action.fadeOut(0.12);
     }
 
-    // Chỉ khởi động animation được chọn một lần.
     nextAction.stopFading();
     nextAction.enabled = true;
     nextAction.reset();
@@ -1300,14 +1311,6 @@ if (
     activeActionRef.current = nextAction;
 
     console.log("[ANIMATION ACTIVE]", {
-        weaponType,
-        normalizedWeaponType: String(weaponType ?? "")
-            .trim()
-            .toLowerCase()
-            .replace(/[\s-]+/g, "_"),
-        moving,
-        aiming,
-        crouching,
         clip: nextAction.getClip().name,
     });
 }, [
@@ -1319,7 +1322,6 @@ if (
     aiming,
     weaponType,
 ]);
-
 
     // ========================================================
     // ANIMATION: JUMP FINISHED
@@ -1428,64 +1430,102 @@ if (
         });
     }, [actions, jumpTrigger]);
 
-    // ========================================================
-    // ANIMATION: PUNCH FINISHED
-    // ========================================================
+useEffect(() => {
+    const punchAction = findAction(/^male_punch$/i);
+    const comboAction = findAction(/^male_punch_combo$/i);
 
-    useEffect(() => {
-        const punchAction = findAction(
-            /punch|attack|melee/i,
-        );
+    if (!punchAction) {
+        console.warn("[PUNCH] Không tìm thấy male_punch");
+        return;
+    }
 
-        if (!punchAction) {
-            console.warn(
-                "[ANIMATION] Không tìm thấy animation Punch.",
-            );
+    if (!comboAction) {
+        console.warn("[PUNCH] Không tìm thấy male_punch_combo");
+        return;
+    }
+
+    const handleFinished = (
+        event: { action?: AnimationAction },
+    ) => {
+        const finishedAction = event.action;
+
+        if (
+            finishedAction !== punchAction &&
+            finishedAction !== comboAction
+        ) {
             return;
         }
 
-     const handleFinished = (
-    event: { action?: AnimationAction },
-) => {
-    if (event.action !== punchAction) return;
+        punchingRef.current = false;
 
-    punchingRef.current = false;
+        if (hitReactRef.current || jumpingRef.current || hp <= 0) {
+            return;
+        }
 
-    // Không được chuyển animation khi đang bị đánh.
-    if (hitReactRef.current) return;
+        const normalizedWeaponType = String(weaponType ?? "")
+            .trim()
+            .toLowerCase()
+            .replace(/[\s-]+/g, "_");
 
-    if (jumpingRef.current) return;
+        const hasRifle =
+            normalizedWeaponType.includes("rifle") ||
+            normalizedWeaponType === "ak47" ||
+            normalizedWeaponType === "ak_47";
 
-    const nextAction = locomotionActionRef.current;
-    if (!nextAction) return;
+        // Còn giữ nút và chưa cầm súng: chuyển sang cú đấm kế tiếp.
+        if (punchHeldRef.current && !hasRifle) {
+          const nextPunchAction = comboAction;
+            punchingRef.current = true;
+            nextPunchAction.stopFading();
+            nextPunchAction.enabled = true;
+            nextPunchAction.reset();
+            nextPunchAction.setLoop(LoopOnce, 1);
+            nextPunchAction.clampWhenFinished = true;
+            nextPunchAction.setEffectiveWeight(1);
+            nextPunchAction.setEffectiveTimeScale(1);
+            nextPunchAction.fadeIn(0.05).play();
 
-    punchAction.fadeOut(0.1);
+            activeActionRef.current = nextPunchAction;
 
-    nextAction.enabled = true;
-    nextAction.setLoop(LoopRepeat, Infinity);
-    nextAction.clampWhenFinished = false;
-    nextAction.setEffectiveWeight(1);
-    nextAction.reset();
-    nextAction.fadeIn(0.15).play();
+            console.log("[PUNCH COMBO]", {
+                clip: nextPunchAction.getClip().name,
+            });
 
-    activeActionRef.current = nextAction;
-};
+            return;
+        }
 
-        mixer.addEventListener("finished", handleFinished);
+        // Đã thả nút: trở về locomotion.
+        punchAction.fadeOut(0.1);
+        comboAction.fadeOut(0.1);
 
-        return () => {
-            mixer.removeEventListener(
-                "finished",
-                handleFinished,
-            );
-        };
-    }, [actions, mixer]);
+        const nextAction = locomotionActionRef.current;
 
+        if (!nextAction) return;
+
+        nextAction.stopFading();
+        nextAction.enabled = true;
+        nextAction.reset();
+        nextAction.setLoop(LoopRepeat, Infinity);
+        nextAction.clampWhenFinished = false;
+        nextAction.setEffectiveWeight(1);
+        nextAction.setEffectiveTimeScale(1);
+        nextAction.fadeIn(0.15).play();
+
+        activeActionRef.current = nextAction;
+    };
+
+    mixer.addEventListener("finished", handleFinished);
+
+    return () => {
+        mixer.removeEventListener("finished", handleFinished);
+    };
+}, [actions, mixer, weaponType, hp]);
     // ========================================================
     // ANIMATION: PUNCH TRIGGER
     // ========================================================
-
-
+// ========================================================
+// ANIMATION: PUNCH TRIGGER
+// ========================================================
 useEffect(() => {
     if (punchTrigger === lastPunchTriggerRef.current) {
         return;
@@ -1493,47 +1533,56 @@ useEffect(() => {
 
     lastPunchTriggerRef.current = punchTrigger;
 
-    // Không cho đấm ghi đè hit reaction hoặc animation nhảy.
-    if (jumpingRef.current || hitReactRef.current) {
+    if (
+        punchingRef.current ||
+        jumpingRef.current ||
+        hitReactRef.current ||
+        hp <= 0
+    ) {
         return;
     }
 
+    const normalizedWeaponType = String(weaponType ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\s-]+/g, "_");
 
-        const punchAction = findAction(
-            /punch|attack|melee/i,
-        );
+    const hasRifle =
+        normalizedWeaponType.includes("rifle") ||
+        normalizedWeaponType === "ak47" ||
+        normalizedWeaponType === "ak_47";
 
-        if (!punchAction) {
-            console.warn(
-                "[ANIMATION] Không tìm thấy clip Punch trong GLB.",
-            );
-            return;
-        }
+    if (hasRifle) return;
 
-        punchingRef.current = true;
+    const punchAction = findAction(/^male_punch$/i);
 
-        for (const action of Object.values(actions)) {
-            if (action && action !== punchAction) {
-                action.fadeOut(0.1);
-            }
-        }
+    if (!punchAction) {
+        console.warn("[PUNCH] Không tìm thấy male_punch");
+        return;
+    }
 
-        punchAction.enabled = true;
-        punchAction.reset();
-        punchAction.setLoop(LoopOnce, 1);
-        punchAction.clampWhenFinished = true;
-        punchAction.setEffectiveWeight(1);
-        punchAction.setEffectiveTimeScale(1);
-        punchAction.fadeIn(0.1).play();
+    punchingRef.current = true;
 
-        activeActionRef.current = punchAction;
+    for (const action of Object.values(actions)) {
+        if (!action || action === punchAction) continue;
 
-        console.log("[ANIMATION] Punch started:", {
-            clip: punchAction.getClip().name,
-            duration: punchAction.getClip().duration,
-        });
-    }, [actions, punchTrigger]);
+        action.stopFading();
+        action.fadeOut(0.1);
+    }
 
+    punchAction.stopFading();
+    punchAction.enabled = true;
+    punchAction.reset();
+    punchAction.setLoop(LoopOnce, 1);
+    punchAction.clampWhenFinished = true;
+    punchAction.setEffectiveWeight(1);
+    punchAction.setEffectiveTimeScale(1);
+    punchAction.fadeIn(0.1).play();
+
+    activeActionRef.current = punchAction;
+
+    console.log("[PUNCH] Started:", punchAction.getClip().name);
+}, [actions, punchTrigger, weaponType, hp]);
     // ========================================================
     // RENDER
     // ========================================================
