@@ -3,7 +3,7 @@ import { Client } from "@colyseus/sdk";
 
 const serverUrl = (
     process.env.NEXT_PUBLIC_GAME_SERVER_URL ||
-    "https://boom-server-vyrm.onrender.com"
+    "https://scare.onrender.com"
 )
     .trim()
     .replace(/\/+$/, "");
